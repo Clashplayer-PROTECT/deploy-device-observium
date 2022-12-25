@@ -7,16 +7,13 @@
 # Root Force
 # By Clashplayer#2134
 
-wget -O /usr/local/bin/distro https://www.observium.org/files/distro
-chmod +x /usr/local/bin/distro
-
   echo -e "${GREEN}Installing snmpd...${NC}"
   apt-get -qq install -y snmpd
 
-  cp /opt/observium/scripts/distro /usr/local/bin/distro
+  wget -O /usr/local/bin/distro https://www.observium.org/files/distro
   chmod +x /usr/local/bin/distro
   echo -e "${YELLOW}Reconfiguring local snmpd${NC}"
-  echo "agentAddress udp:161,udp6:[::1]:161" > /etc/snmp/snmpd.conf
+  echo "agentAddress   udp:161,udp6:[::1]:161" > /etc/snmp/snmpd.conf
   snmpcommunity="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-15};echo;)"
   echo "rocommunity $snmpcommunity" >> /etc/snmp/snmpd.conf
 
@@ -35,3 +32,18 @@ chmod +x /usr/local/bin/distro
     echo "# This lines allows Observium to detect hardware, vendor and serial" >> /etc/snmp/snmpd.conf
     echo "extend .1.3.6.1.4.1.2021.7890.2 hardware /bin/cat /proc/device-tree/model" >> /etc/snmp/snmpd.conf
     echo "#extend .1.3.6.1.4.1.2021.7890.4 serial   /bin/cat /proc/device-tree/serial" >> /etc/snmp/snmpd.conf
+  fi
+
+  # Accurate uptime
+  echo "# This line allows Observium to collect an accurate uptime" >> /etc/snmp/snmpd.conf
+  echo "extend uptime /bin/cat /proc/uptime" >> /etc/snmp/snmpd.conf
+
+  echo "# This line enables Observium's ifAlias description injection" >> /etc/snmp/snmpd.conf
+  echo "#pass_persist .1.3.6.1.2.1.31.1.1.1.18 /usr/local/bin/ifAlias_persist" >> /etc/snmp/snmpd.conf
+  
+  service snmpd restart
+  
+  echo -e "${YELLOW}You can look in the file /etc/snmp/snmpd.conf to get the identifiers${NC}"
+
+
+
